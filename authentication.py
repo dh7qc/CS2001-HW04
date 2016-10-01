@@ -34,7 +34,7 @@ def requires_authentication(func):
 
     """
     # if len(request.get_cookie("logged_in_as")) > 0:
-    # bottle.redirect('/login/')
+    #    bottle.redirect('/login/')
     pass
 
 def requires_authorization(func):
@@ -104,7 +104,22 @@ def validate_login_form(form):
         indicates that no errors were found.
 
     """
-    pass
+    error_list = []
+
+    # Checks if username field is in form
+    if 'username' not in form:
+        error_list.append("Missing username field!")
+    # Otherwise it is in the form, check if it's blank
+    elif len(form['username']) < 1:
+        error_list.append("username field cannot be blank!")
+
+    # Do the same thing for the password
+    if 'password' not in form:
+        error_list.append("Missing password field!")
+    elif len(form['password']) < 1:
+        error_list.append("password field cannot be blank!")
+
+    return error_list
 
 
 def check_password(username, password):
@@ -129,7 +144,10 @@ def check_password(username, password):
     # Open the passwords.json file, check if username matches password.
     with open("passwords.json") as f:
         passwords = json.load(f)
-        if passwords[username.lower()] == password:
-            return True
+        if username.lower() in passwords:
+            if passwords[username.lower()] == password:
+                return True
+            else:
+                return False
         else:
             return False
