@@ -33,8 +33,9 @@ def requires_authentication(func):
     :returns: The wrapped function
 
     """
+    # if len(request.get_cookie("logged_in_as")) > 0:
+    # bottle.redirect('/login/')
     pass
-
 
 def requires_authorization(func):
     """Updates a handler, so that a logged-in user is redirected when they
@@ -124,4 +125,11 @@ def check_password(username, password):
         "passwords.json", otherwise False
 
     """
-    pass
+
+    # Open the passwords.json file, check if username matches password.
+    with open("passwords.json") as f:
+        passwords = json.load(f)
+        if passwords[username.lower()] == password:
+            return True
+        else:
+            return False
