@@ -32,7 +32,8 @@ def validate_message_form(form):
         indicates that no errors were found.
 
     """
-    pass
+    error_list = []
+    return error_list
 
 
 def _load_message(message_filename):
@@ -69,13 +70,20 @@ def _load_message(message_filename):
     dict = {}
 
     with open(message_filename) as f:
+        # Load the json file
         msg = json.load(f)
+ 
+        # Derives the uuid from message_filename
         dict['id'] = message_filename[9:45]
+
+        # Get the rest of the data
         dict['to'] = msg['to']
         dict['from'] = msg['from']
         dict['subject'] = msg['subject']
         dict['body'] = msg['body']
-        dict['time'] = datetime.strptime(mgs['time'], DATE_FORMAT)
+        
+        # Converts the time string to the correct type and format
+        dict['time'] = datetime.strptime(msg['time'], DATE_FORMAT)
 
     return dict
 
@@ -91,7 +99,10 @@ def load_message(message_id):
 
     """
 
+    # Create the directory from which _load_message will open the file.
     file_name = os.path.join('messages/', '{}.json'.format(message_id))
+
+    # Use _load_message to get that file's contents into a dict. 
     msg_dict = _load_message(file_name)
 
     # Assuming it's supposed to return the dict and NOT a list. 
@@ -112,7 +123,19 @@ def load_all_messages():
         most to least recent.
 
     """
-    pass
+    lst = []
+
+    # Open each json file in messages directory
+    for file in glob('messages/*.json'):
+
+        # Load message into dict and append to list
+        dict = _load_message(file)
+        lst.append(dict)
+
+    # Sort the list by the time key from most to least recent. 
+    lst = sorted(lst, key = lambda x: x['time'], reverse = True)
+
+    return lst
 
 
 def load_sent_messages(username):
@@ -134,7 +157,21 @@ def load_sent_messages(username):
         by timestamp from most to least recent.
 
     """
-    pass
+    lst = []
+
+    # Open each json file in messages directory
+    for file in glob('messages/*.json'):
+        # Load message, append to list if 'from' matches username
+        dict = _load_message(file)
+        if dict['from'] == username:
+            lst.append(dict)
+        else:
+            continue
+
+    # Sort the list by the time key from most to least recent. 
+    lst = sorted(lst, key = lambda x: x['time'], reverse = True)
+
+    return lst
 
 
 def load_received_messages(username):
@@ -156,7 +193,21 @@ def load_received_messages(username):
         by timestamp from most to least recent.
 
     """
-    pass
+    lst = []
+
+    # Open each json file in messages directory
+    for file in glob('messages/*.json'):
+        # Load message, append to list if 'to' matches username
+        dict = _load_message(file)
+        if dict['to'] == username:
+            lst.append(dict)
+        else:
+            continue
+
+    # Sort the list by the time key from most to least recent. 
+    lst = sorted(lst, key = lambda x: x['time'], reverse = True)
+
+    return lst
 
 
 def send_message(message_dict):
