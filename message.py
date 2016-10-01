@@ -65,7 +65,19 @@ def _load_message(message_filename):
     :returns: A loaded message dict as described above
 
     """
-    pass
+
+    dict = {}
+
+    with open(message_filename) as f:
+        msg = json.load(f)
+        dict['id'] = message_filename[9:45]
+        dict['to'] = msg['to']
+        dict['from'] = msg['from']
+        dict['subject'] = msg['subject']
+        dict['body'] = msg['body']
+        dict['time'] = datetime.strptime(mgs['time'], DATE_FORMAT)
+
+    return dict
 
 
 def load_message(message_id):
@@ -78,7 +90,13 @@ def load_message(message_id):
         most to least recent.
 
     """
-    pass
+
+    file_name = os.path.join('messages/', '{}.json'.format(message_id))
+    msg_dict = _load_message(file_name)
+
+    # Assuming it's supposed to return the dict and NOT a list. 
+    return msg_dict
+
 
 
 def load_all_messages():
@@ -177,4 +195,13 @@ def send_message(message_dict):
     :returns: None
 
     """
-    pass
+
+    # Generate a uuid
+    new_uuid = uuid4()
+
+    # Define the save directory and file name
+    file = os.path.join('messages/', '{}.json'.format(new_uuid))
+
+    # Create the file and dump the message_dict to it. 
+    with open(file, 'x') as outfile:
+        json.dump(message_dict, outfile, indent = 4)
