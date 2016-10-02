@@ -6,6 +6,7 @@ import socket
 import sys
 
 from glob import glob
+from datetime import datetime
 
 # Third party library imports (installed with pip)
 from bottle import (app, get, post, response, request, run,
@@ -55,6 +56,7 @@ def list_messages():
 
 @get('/compose/')
 @jinja2_view("templates/compose_message.html")
+@load_alerts # was missing this. 
 def show_compose_message_form():
     """Handler for GET requests to ``/compose/`` path.
 
@@ -76,7 +78,20 @@ def show_compose_message_form():
     :rtype: dict
 
     """
-    return {}
+    dict = {}
+    lst = []
+
+    # Open the passwords file
+    with open("passwords.json") as f:
+        passwords = json.load(f)
+        # iterate through each user
+        for user in passwords.keys():
+            # add every user's name to list except logged in user
+            if user !=  request.get_cookie("logged_in_as"):
+                lst.append(user)
+
+    dict['people'] = lst
+    return dict
 
 
 @post('/compose/')
@@ -103,8 +118,25 @@ def process_compose_message_form():
         pages. It has no template to render.
 
     """
-    redirect("/")
 
+    # Step 1
+    errors = validate_message_form(request.forms)
+
+    if errors:
+        save_danger(*errors)
+        redirect('/compose/')
+
+    dict = {}
+    dict['to'] = request.forms['to']
+    dict['from'] = request.get_cookie("logged_in_as")
+    dict['subject'] = request.forms['subject']
+    dict['body'] = request.forms['body']
+    dict['time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    send_message(dict)
+
+    save_success("Successfully sent message!")
+    redirect("/")
 
 @get('/view/<message_id:re:[0-9a-f\-]{36}>/')
 @jinja2_view("templates/view_message.html")
