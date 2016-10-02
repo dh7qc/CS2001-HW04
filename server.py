@@ -27,6 +27,7 @@ from message import (
 
 @get('/')
 @jinja2_view("templates/list_messages.html")
+@load_alerts
 def list_messages():
     """Handler for GET requests to ``/`` path.
 
@@ -51,7 +52,20 @@ def list_messages():
     :rtype: dict
 
     """
-    return {}
+    dict = {}
+
+    # Get's users name from cookie
+    user = request.get_cookie("logged_in_as")
+    
+    # Get lists of sent and received messages
+    sent = load_sent_messages(user)
+    received = load_received_messages(user)
+
+    # Put into dicitonary
+    dict['sent_messages'] = sent
+    dict['received_messages'] = received
+    
+    return dict
 
 
 @get('/compose/')
@@ -118,14 +132,15 @@ def process_compose_message_form():
         pages. It has no template to render.
 
     """
-
-    # Step 1
+    # Validate the form, get errors if there are any.
     errors = validate_message_form(request.forms)
 
+    # Save errors and redirect
     if errors:
         save_danger(*errors)
         redirect('/compose/')
 
+    # Otherwise get the necessary info in the dictionary
     dict = {}
     dict['to'] = request.forms['to']
     dict['from'] = request.get_cookie("logged_in_as")
@@ -133,9 +148,10 @@ def process_compose_message_form():
     dict['body'] = request.forms['body']
     dict['time'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+    # Send the message (creates a .json file in messages/)
     send_message(dict)
 
-    save_success("Successfully sent message!")
+    save_success("Message sent!")
     redirect("/")
 
 @get('/view/<message_id:re:[0-9a-f\-]{36}>/')
@@ -206,8 +222,20 @@ def delete_message(message_id):
         pages. It has no template to render.
 
     """
-    redirect("/")
 
+    dir = file_name = os.path.join('messages/', '{}.json'.format(message_id))
+
+    try:
+        os.remove(dir)
+        save_success("Success!")
+        
+    except OSError:
+        save_danger("OSError")
+        
+    finally:
+        redirect("/")
+
+    pass
 
 @get('/shred/')
 @jinja2_view("templates/shred_messages.html")
