@@ -33,6 +33,25 @@ def validate_message_form(form):
 
     """
     error_list = []
+
+    # Check if form is missing 'to'
+    if 'to' not in form:
+        error_list.append("Missing to field!")
+    # Otherwise it does have 'to', check if it's blank
+    elif len(form['to']) == 0:
+        error_list.append("'to' cannot be blank")
+
+    # Repeat above process for 'subject' and 'body'
+    if 'subject' not in form:
+        error_list.append("Missing subject field!")
+    elif len(form['subject']) == 0:
+        error_list.append("'subject' cannot be blank")
+
+    if 'body' not in form:
+        error_list.append("Missing body field!")
+    elif len(form['body']) == 0:
+        error_list.append("'body' cannot be blank")
+
     return error_list
 
 
@@ -72,7 +91,7 @@ def _load_message(message_filename):
     with open(message_filename) as f:
         # Load the json file
         msg = json.load(f)
- 
+
         # Derives the uuid from message_filename
         dict['id'] = message_filename[9:45]
 
@@ -81,7 +100,7 @@ def _load_message(message_filename):
         dict['from'] = msg['from']
         dict['subject'] = msg['subject']
         dict['body'] = msg['body']
-        
+
         # Converts the time string to the correct type and format
         dict['time'] = datetime.strptime(msg['time'], DATE_FORMAT)
 
@@ -102,12 +121,11 @@ def load_message(message_id):
     # Create the directory from which _load_message will open the file.
     file_name = os.path.join('messages/', '{}.json'.format(message_id))
 
-    # Use _load_message to get that file's contents into a dict. 
+    # Use _load_message to get that file's contents into a dict.
     msg_dict = _load_message(file_name)
 
-    # Assuming it's supposed to return the dict and NOT a list. 
+    # Assuming it's supposed to return the dict and NOT a list.
     return msg_dict
-
 
 
 def load_all_messages():
@@ -132,8 +150,8 @@ def load_all_messages():
         dict = _load_message(file)
         lst.append(dict)
 
-    # Sort the list by the time key from most to least recent. 
-    lst = sorted(lst, key = lambda x: x['time'], reverse = True)
+    # Sort the list by the time key from most to least recent.
+    lst = sorted(lst, key=lambda x: x['time'], reverse=True)
 
     return lst
 
@@ -168,8 +186,8 @@ def load_sent_messages(username):
         else:
             continue
 
-    # Sort the list by the time key from most to least recent. 
-    lst = sorted(lst, key = lambda x: x['time'], reverse = True)
+    # Sort the list by the time key from most to least recent.
+    lst = sorted(lst, key=lambda x: x['time'], reverse=True)
 
     return lst
 
@@ -204,8 +222,8 @@ def load_received_messages(username):
         else:
             continue
 
-    # Sort the list by the time key from most to least recent. 
-    lst = sorted(lst, key = lambda x: x['time'], reverse = True)
+    # Sort the list by the time key from most to least recent.
+    lst = sorted(lst, key=lambda x: x['time'], reverse=True)
 
     return lst
 
@@ -253,6 +271,6 @@ def send_message(message_dict):
     # Define the save directory and file name
     file = os.path.join('messages/', '{}.json'.format(new_uuid))
 
-    # Create the file and dump the message_dict to it. 
+    # Create the file and dump the message_dict to it.
     with open(file, 'x') as outfile:
-        json.dump(message_dict, outfile, indent = 4)
+        json.dump(message_dict, outfile, indent=4)
