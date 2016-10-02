@@ -39,18 +39,18 @@ def validate_message_form(form):
         error_list.append("Missing to field!")
     # Otherwise it does have 'to', check if it's blank
     elif len(form['to']) == 0:
-        error_list.append("'to' cannot be blank")
+        error_list.append("to field cannot be blank!")
 
     # Repeat above process for 'subject' and 'body'
     if 'subject' not in form:
         error_list.append("Missing subject field!")
     elif len(form['subject']) == 0:
-        error_list.append("'subject' cannot be blank")
+        error_list.append("subject field cannot be blank!")
 
     if 'body' not in form:
         error_list.append("Missing body field!")
     elif len(form['body']) == 0:
-        error_list.append("'body' cannot be blank")
+        error_list.append("body field cannot be blank!")
 
     return error_list
 
