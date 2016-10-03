@@ -33,9 +33,16 @@ def requires_authentication(func):
     :returns: The wrapped function
 
     """
-    # if len(request.get_cookie("logged_in_as")) > 0:
-    #    bottle.redirect('/login/')
-    pass
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if request.get_cookie("logged_in_as") is None:
+            redirect('/login/')
+        elif len(request.get_cookie("logged_in_as")) == 0:
+            redirect('/login/')
+
+        context = func(*args, **kwargs)
+        return context
+    return wrapper
 
 def requires_authorization(func):
     """Updates a handler, so that a logged-in user is redirected when they
@@ -86,8 +93,30 @@ def requires_authorization(func):
     :returns: The wrapped function
 
     """
-    pass
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if request.get_cookie("logged_in_as") is None:
+            redirect('/login/')
+        elif len(request.get_cookie("logged_in_as")) == 0:
+            redirect('/login/')
+        else:
+            msg = {}
+            try:
+                msg = load_message(message_id)
+            except OSError:
+                save_danger("OSError")
+                redirect("/")
+            logged_user = request.get_cookie("logged_in_as")
+            
+            if not logged_user == msg['to'] and not logged_user == msg['from']:
+                redirect("/")
+            
 
+        context = func(*args, **kwargs)
+        return context
+    return wrapper
+
+    pass
 
 def validate_login_form(form):
     """Validates a login form in the following ways:
@@ -110,13 +139,13 @@ def validate_login_form(form):
     if 'username' not in form:
         error_list.append("Missing username field!")
     # Otherwise it is in the form, check if it's blank
-    elif len(form['username']) < 1:
+    elif len(form['username']) == 0:
         error_list.append("username field cannot be blank!")
 
     # Do the same thing for the password
     if 'password' not in form:
         error_list.append("Missing password field!")
-    elif len(form['password']) < 1:
+    elif len(form['password']) == 0:
         error_list.append("password field cannot be blank!")
 
     return error_list
