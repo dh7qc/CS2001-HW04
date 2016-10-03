@@ -27,6 +27,7 @@ from message import (
 
 @get('/')
 @jinja2_view("templates/list_messages.html")
+@requires_authentication
 @load_alerts
 def list_messages():
     """Handler for GET requests to ``/`` path.
@@ -70,7 +71,8 @@ def list_messages():
 
 @get('/compose/')
 @jinja2_view("templates/compose_message.html")
-@load_alerts # was missing this. 
+@requires_authentication
+@load_alerts # was missing this.
 def show_compose_message_form():
     """Handler for GET requests to ``/compose/`` path.
 
@@ -109,6 +111,7 @@ def show_compose_message_form():
 
 
 @post('/compose/')
+@requires_authentication
 def process_compose_message_form():
     """Handler for POST requests to ``/compose/`` path.
 
@@ -156,6 +159,7 @@ def process_compose_message_form():
 
 @get('/view/<message_id:re:[0-9a-f\-]{36}>/')
 @jinja2_view("templates/view_message.html")
+@requires_authentication
 def view_message(message_id):
     """Handler for GET requests to ``/view/<message_id>/`` path.
 
@@ -176,11 +180,14 @@ def view_message(message_id):
     :rtype: dict
 
     """
-    return {}
+    msg = {}
+    msg['message'] = load_message(message_id)
+    return msg
 
 
 @get('/delete/<message_id:re:[0-9a-f\-]{36}>/')
 @jinja2_view("templates/delete_message.html")
+@requires_authentication
 def show_deletion_confirmation_form(message_id):
     """Handler for GET requests to ``/delete/<message_id>/`` path.
 
@@ -201,10 +208,13 @@ def show_deletion_confirmation_form(message_id):
     :rtype: dict
 
     """
-    return {}
+    dict = {}
+    dict['message'] = load_message(message_id)
+    return dict
 
 
 @post('/delete/<message_id:re:[0-9a-f\-]{36}>/')
+@requires_authorization
 def delete_message(message_id):
     """Handler for POST requests to ``/delete/<message_id>/`` path.
 
@@ -230,7 +240,7 @@ def delete_message(message_id):
         save_success("Success!")
         
     except OSError:
-        save_danger("OSError")
+        save_danger("No such message".format(message_id))
         
     finally:
         redirect("/")
@@ -239,6 +249,8 @@ def delete_message(message_id):
 
 @get('/shred/')
 @jinja2_view("templates/shred_messages.html")
+@requires_authentication
+@load_alerts # I added this
 def show_shred_confirmation_form():
     """Handler for GET requests to ``/shred/`` path.
 
@@ -261,6 +273,7 @@ def show_shred_confirmation_form():
 
 
 @post('/shred/')
+@requires_authentication
 def shred_messages():
     """Handler for POST requests to ``/shred/`` path.
 
@@ -277,6 +290,15 @@ def shred_messages():
         pages. It has no template to render.
 
     """
+    for file in glob('messages/*.json'):
+        try:
+            os.remove(file)
+        except:
+            save_danger("something couldn't be shredded")
+
+    if len(glob('messages/*.json')) == 0:
+        save_success("Shreded all messages.")
+
     redirect("/")
 
 
