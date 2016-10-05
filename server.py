@@ -157,9 +157,11 @@ def process_compose_message_form():
     save_success("Message sent!")
     redirect("/")
 
+
+@requires_authorization
 @get('/view/<message_id:re:[0-9a-f\-]{36}>/')
 @jinja2_view("templates/view_message.html")
-@requires_authentication
+@load_alerts
 def view_message(message_id):
     """Handler for GET requests to ``/view/<message_id>/`` path.
 
@@ -184,10 +186,9 @@ def view_message(message_id):
     msg['message'] = load_message(message_id)
     return msg
 
-
+@requires_authorization
 @get('/delete/<message_id:re:[0-9a-f\-]{36}>/')
 @jinja2_view("templates/delete_message.html")
-@requires_authentication
 def show_deletion_confirmation_form(message_id):
     """Handler for GET requests to ``/delete/<message_id>/`` path.
 
@@ -212,9 +213,8 @@ def show_deletion_confirmation_form(message_id):
     dict['message'] = load_message(message_id)
     return dict
 
-
-@post('/delete/<message_id:re:[0-9a-f\-]{36}>/')
 @requires_authorization
+@post('/delete/<message_id:re:[0-9a-f\-]{36}>/')
 def delete_message(message_id):
     """Handler for POST requests to ``/delete/<message_id>/`` path.
 
@@ -233,19 +233,18 @@ def delete_message(message_id):
 
     """
 
-    dir = file_name = os.path.join('messages/', '{}.json'.format(message_id))
+    dir = os.path.join('messages/', '{}.json'.format(message_id))
 
     try:
         os.remove(dir)
-        save_success("Success!")
+        save_success("Deleted {}.".format(message_id))
         
     except OSError:
-        save_danger("No such message".format(message_id))
+        save_danger("No such message {}".format(message_id))
         
     finally:
         redirect("/")
 
-    pass
 
 @get('/shred/')
 @jinja2_view("templates/shred_messages.html")
