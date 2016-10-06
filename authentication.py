@@ -35,14 +35,18 @@ def requires_authentication(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
+        # If the cookie doesn't exist, or length is 0, redirect to login.
         if request.get_cookie("logged_in_as") is None:
             redirect('/login/')
         elif len(request.get_cookie("logged_in_as")) == 0:
             redirect('/login/')
 
+        # Otherwise
         context = func(*args, **kwargs)
         return context
+
     return wrapper
+
 
 def requires_authorization(func):
     """Updates a handler, so that a logged-in user is redirected when they
@@ -95,28 +99,40 @@ def requires_authorization(func):
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
+        # If cookie doesn't exist, or length is 0, redirect to login.
         if request.get_cookie("logged_in_as") is None:
             redirect('/login/')
         elif len(request.get_cookie("logged_in_as")) == 0:
             redirect('/login/')
+        # Otherwise
         else:
+            id = ''
             msg = {}
-            try:
-                msg = load_message(message_id)
-            except OSError:
-                save_danger("OSError")
-                redirect("/")
-            logged_user = request.get_cookie("logged_in_as")
-            
-            if not logged_user == msg['to'] and not logged_user == msg['from']:
-                redirect("/")
-            
 
-        context = func(*args, **kwargs)
-        return context
+            context = func(*args, **kwargs)
+
+            # Gets the id from the dict.
+            if 'id' in context['message']:
+                id = context['message']['id']
+
+            # Tries to load it, otherwise alert and redirect.
+            try:
+                msg = load_message(id)
+            except OSError:
+                save_danger(save_danger("No such message {}".format(id)))
+                redirect('/')
+
+            # Get the username of the current logged in user.
+            user = request.get_cookie("logged_in_as")
+
+            # Redirect if the user didn't send or receive the message
+            if not user == msg['to'] and not user == msg['from']:
+                redirect('/')
+
+            return context
+
     return wrapper
 
-    pass
 
 def validate_login_form(form):
     """Validates a login form in the following ways:
