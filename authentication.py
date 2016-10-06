@@ -98,7 +98,7 @@ def requires_authorization(func):
 
     """
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(message_id, *args, **kwargs):
         # If cookie doesn't exist, or length is 0, redirect to login.
         if request.get_cookie("logged_in_as") is None:
             redirect('/login/')
@@ -106,20 +106,13 @@ def requires_authorization(func):
             redirect('/login/')
         # Otherwise
         else:
-            id = ''
             msg = {}
 
-            context = func(*args, **kwargs)
-
-            # Gets the id from the dict.
-            if 'id' in context['message']:
-                id = context['message']['id']
-
-            # Tries to load it, otherwise alert and redirect.
+            # Attempt to load the message, otherwise save alert and redirect
             try:
-                msg = load_message(id)
+                msg = load_message(message_id)
             except OSError:
-                save_danger(save_danger("No such message {}".format(id)))
+                save_danger("No such message {}".format(message_id))
                 redirect('/')
 
             # Get the username of the current logged in user.
@@ -129,7 +122,7 @@ def requires_authorization(func):
             if not user == msg['to'] and not user == msg['from']:
                 redirect('/')
 
-            return context
+            return func(message_id, *args, **kwargs)
 
     return wrapper
 
